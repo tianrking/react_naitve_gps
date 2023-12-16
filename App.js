@@ -30,11 +30,16 @@ export default function App() {
       setMagnetometerData(data);
     });
 
+    const locationInterval = setInterval(() => {
+      getLocation();
+    }, 200); // 每 200 ms更新一次位置
+
     return () => {
       gyroSubscription.remove();
       accelSubscription.remove();
       barometerSubscription.remove();
       magnetometerSubscription.remove();
+      clearInterval(locationInterval); // 清理定时器
     };
   }, []);
 
