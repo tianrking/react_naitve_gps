@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, Button, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
-import { Gyroscope, Accelerometer, Barometer } from 'expo-sensors';
+import { Gyroscope, Accelerometer, Barometer, Magnetometer } from 'expo-sensors';
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -9,11 +9,13 @@ export default function App() {
   const [gyroData, setGyroData] = useState(null);
   const [accelData, setAccelData] = useState(null);
   const [barometerData, setBarometerData] = useState(null);
+  const [magnetometerData, setMagnetometerData] = useState(null);
 
   useEffect(() => {
     Gyroscope.setUpdateInterval(1000);
     Accelerometer.setUpdateInterval(1000);
     Barometer.setUpdateInterval(1000);
+    Magnetometer.setUpdateInterval(1000);
 
     const gyroSubscription = Gyroscope.addListener(gyro => {
       setGyroData(gyro);
@@ -24,11 +26,15 @@ export default function App() {
     const barometerSubscription = Barometer.addListener(data => {
       setBarometerData(data);
     });
+    const magnetometerSubscription = Magnetometer.addListener(data => {
+      setMagnetometerData(data);
+    });
 
     return () => {
       gyroSubscription.remove();
       accelSubscription.remove();
       barometerSubscription.remove();
+      magnetometerSubscription.remove();
     };
   }, []);
 
@@ -102,6 +108,20 @@ export default function App() {
     return <Text style={styles.infoText}>Waiting for barometer data...</Text>;
   };
 
+  const renderMagnetometerData = () => {
+    if (magnetometerData) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Magnetometer Data:</Text>
+          <Text style={styles.dataText}>x: {magnetometerData.x.toFixed(3)}</Text>
+          <Text style={styles.dataText}>y: {magnetometerData.y.toFixed(3)}</Text>
+          <Text style={styles.dataText}>z: {magnetometerData.z.toFixed(3)}</Text>
+        </View>
+      );
+    }
+    return <Text style={styles.infoText}>Waiting for magnetometer data...</Text>;
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -109,6 +129,7 @@ export default function App() {
         {renderSensorData(gyroData, 'Gyroscope')}
         {renderSensorData(accelData, 'Accelerometer')}
         {renderBarometerData()}
+        {renderMagnetometerData()}
       </ScrollView>
       <View style={styles.buttonContainer}>
         <Button title="Get GPS Location" onPress={getLocation} />
