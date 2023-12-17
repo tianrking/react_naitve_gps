@@ -32,7 +32,7 @@ export default function App() {
 
     const locationInterval = setInterval(() => {
       getLocation();
-    }, 200); // 每 200 ms更新一次位置
+    }, 2000); // 每 200 ms更新一次位置
 
     return () => {
       gyroSubscription.remove();
@@ -43,17 +43,51 @@ export default function App() {
     };
   }, []);
 
-  const getLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setLocationError(true);
-      return;
-    }
+  // const getLocation = async () => {
+  //   let { status } = await Location.requestForegroundPermissionsAsync();
+  //   if (status !== 'granted') {
+  //     setLocationError(true);
+  //     return;
+  //   }
 
+  //   let location = await Location.getCurrentPositionAsync({});
+  //   setLocation(location);
+  //   setLocationError(false);
+  // };
+  // const getLocation = async () => {
+  //   const { status: existingStatus } = await Location.getForegroundPermissionsAsync();
+  //   let finalStatus = existingStatus;
+  
+  //   if (existingStatus !== 'granted') {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     finalStatus = status;
+  //   }
+  
+  //   if (finalStatus !== 'granted') {
+  //     setLocationError(true);
+  //     return;
+  //   }
+  
+  //   let location = await Location.getCurrentPositionAsync({});
+  //   setLocation(location);
+  //   setLocationError(false);
+  // };
+  const getLocation = async () => {
+    let { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      let response = await Location.requestForegroundPermissionsAsync();
+      if (response.status !== 'granted') {
+        setLocationError(true);
+        return;
+      }
+    }
+  
     let location = await Location.getCurrentPositionAsync({});
     setLocation(location);
     setLocationError(false);
   };
+  
+  
 
   const renderLocationDetails = () => {
     if (locationError) {
