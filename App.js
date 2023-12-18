@@ -5,6 +5,7 @@ import axios from 'axios';
 import * as Location from 'expo-location';
 // import BleManager from 'react-native-ble-manager';
 import { Gyroscope, Accelerometer, Magnetometer, Barometer } from 'expo-sensors';
+import Constants from 'expo-constants';
 
 export default function App() {
   const [location, setLocation] = useState(null);
@@ -96,10 +97,36 @@ export default function App() {
   //     console.error('Error sending data:', error);
   //   }
   // };
-  const sendData = async (location, gyro, accel, magnetometer, barometer) => {
-    const payload = { location, gyroData: gyro, accelData: accel, magnetometerData: magnetometer, barometerData: barometer };
-    console.log('Sending data:', JSON.stringify(payload, null, 2));
 
+  // const sendData = async (location, gyro, accel, magnetometer, barometer) => {
+  //   const payload = { location, gyroData: gyro, accelData: accel, magnetometerData: magnetometer, barometerData: barometer };
+  //   console.log('Sending data:', JSON.stringify(payload, null, 2));
+
+  //   try {
+  //     await axios.post(`${serverUrl}/send-data`, payload);
+  //     console.log('Data sent successfully');
+  //   } catch (error) {
+  //     console.error('Error sending data:', error);
+  //   }
+  // };
+
+  const sendData = async (location, gyro, accel, magnetometer, barometer) => {
+    const deviceInfo = {
+      deviceId: Constants.installationId, // 用作设备的唯一ID
+      deviceType: Constants.deviceName // 设备名称
+    };
+  
+    const payload = {
+      location,
+      gyroData: gyro,
+      accelData: accel,
+      magnetometerData: magnetometer,
+      barometerData: barometer,
+      deviceInfo // 添加的设备信息
+    };
+  
+    console.log('Sending data:', JSON.stringify(payload, null, 2));
+  
     try {
       await axios.post(`${serverUrl}/send-data`, payload);
       console.log('Data sent successfully');
@@ -254,4 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginVertical: 2,
   },
+
 });
