@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, ScrollView, Button, TextInput, TouchableOpacity
 import Modal from 'react-native-modal';
 import axios from 'axios';
 import * as Location from 'expo-location';
+// import BleManager from 'react-native-ble-manager';
 import { Gyroscope, Accelerometer, Magnetometer, Barometer } from 'expo-sensors';
 
 export default function App() {
@@ -11,7 +12,8 @@ export default function App() {
   const [accelData, setAccelData] = useState({});
   const [magnetometerData, setMagnetometerData] = useState({});
   const [barometerData, setBarometerData] = useState({});
-  const [serverUrl, setServerUrl] = useState('http://yourserver.com:port');
+  
+  const [serverUrl, setServerUrl] = useState('http://bwg.w0x7ce.eu:8000');
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [isLocationModalVisible, setLocationModalVisible] = useState(false);
@@ -31,20 +33,36 @@ export default function App() {
           accuracy: Location.Accuracy.High,
           timeInterval: 500, // 每0.5秒更新一次
           distanceInterval: 1, // 或者每移动1米更新一次
-        }, setLocation);
+        }, updatedLocation => {
+          setLocation(updatedLocation);
+          sendData(updatedLocation, gyroData, accelData, magnetometerData, barometerData); // 实时发送数据
+        });
       }
 
       Gyroscope.setUpdateInterval(1000);
-      const gyroSubscription = Gyroscope.addListener(data => setGyroData(data));
-
       Accelerometer.setUpdateInterval(1000);
-      const accelSubscription = Accelerometer.addListener(data => setAccelData(data));
-
       Magnetometer.setUpdateInterval(1000);
-      const magnetometerSubscription = Magnetometer.addListener(data => setMagnetometerData(data));
-
       Barometer.setUpdateInterval(1000);
-      const barometerSubscription = Barometer.addListener(data => setBarometerData(data));
+
+      const gyroSubscription = Gyroscope.addListener(data => {
+        setGyroData(data);
+        sendData(location, data, accelData, magnetometerData, barometerData); // 实时发送数据
+      });
+
+      const accelSubscription = Accelerometer.addListener(data => {
+        setAccelData(data);
+        sendData(location, gyroData, data, magnetometerData, barometerData); // 实时发送数据
+      });
+
+      const magnetometerSubscription = Magnetometer.addListener(data => {
+        setMagnetometerData(data);
+        sendData(location, gyroData, accelData, data, barometerData); // 实时发送数据
+      });
+
+      const barometerSubscription = Barometer.addListener(data => {
+        setBarometerData(data);
+        sendData(location, gyroData, accelData, magnetometerData, data); // 实时发送数据
+      });
 
       return () => {
         gyroSubscription.remove();
@@ -58,27 +76,29 @@ export default function App() {
     };
 
     subscribeToSensors();
-
-    const dataSendInterval = setInterval(() => {
-      sendData();
-    }, 2000);
-
-    return () => {
-      clearInterval(dataSendInterval);
-      if (locationSubscription) {
-        locationSubscription.remove();
-      }
-    };
   }, [serverUrl]);
 
-  const sendData = async () => {
-    const payload = {
-      location,
-      gyroData,
-      accelData,
-      magnetometerData,
-      barometerData
-    };
+  // const sendData = async () => {
+  //   const payload = {
+  //     location,
+  //     gyroData,
+  //     accelData,
+  //     magnetometerData,
+  //     barometerData
+  //   };
+  
+  //   console.log('Sending data:', JSON.stringify(payload, null, 2));
+  
+  //   try {
+  //     await axios.post(`${serverUrl}/send-data`, payload);
+  //     console.log('Data sent successfully');
+  //   } catch (error) {
+  //     console.error('Error sending data:', error);
+  //   }
+  // };
+  const sendData = async (location, gyro, accel, magnetometer, barometer) => {
+    const payload = { location, gyroData: gyro, accelData: accel, magnetometerData: magnetometer, barometerData: barometer };
+    console.log('Sending data:', JSON.stringify(payload, null, 2));
 
     try {
       await axios.post(`${serverUrl}/send-data`, payload);
@@ -87,6 +107,7 @@ export default function App() {
       console.error('Error sending data:', error);
     }
   };
+  
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -111,6 +132,12 @@ export default function App() {
   const toggleBarometerModal = () => {
     setBarometerModalVisible(!isBarometerModalVisible);
   };
+
+  // const sendLocationDataViaBluetooth = () => {
+  //   // TODO: 实现蓝牙设备搜索、连接和数据传输的逻辑
+  //   console.log('Sending location data via Bluetooth...');
+  //   // 示例：BleManager.write...
+  // };
 
   const handleServerUrlChange = (text) => {
     setServerUrl(text);
@@ -165,6 +192,7 @@ export default function App() {
         {/* ...渲染其他传感器数据 */}
       </ScrollView>
       <Button title="Set Server Address" onPress={toggleModal} />
+      {/* <Button title="Send Location via Bluetooth" onPress={sendLocationDataViaBluetooth} /> */}
       <Modal isVisible={isModalVisible}>
         <View style={styles.modalContent}>
           <TextInput
@@ -197,14 +225,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 50,
   },
-  // modalContent: {
-  //   backgroundColor: 'white',
-  //   padding: 22,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   borderRadius: 4,
-  //   borderColor: 'rgba(0, 0, 0, 0.1)',
-  // },
   modalContent: {
     backgroundColor: 'white',
     padding: 22,
@@ -212,10 +232,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 4,
     borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  dataText: {
-    fontSize: 16,
-    marginVertical: 2,
   },
   input: {
     height: 40,
@@ -237,9 +253,5 @@ const styles = StyleSheet.create({
   dataText: {
     fontSize: 16,
     marginVertical: 2,
-  },
-  infoText: {
-    fontSize: 16,
-    fontStyle: 'italic',
   },
 });
