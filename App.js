@@ -170,9 +170,45 @@ export default function App() {
     setServerUrl(text);
   };
 
-  const renderSensorData = (data, sensorName, onToggleModal) => {
+  // const renderSensorData = (data, sensorName, onToggleModal) => {
+  //   return (
+  //     <TouchableOpacity style={styles.section} onPress={onToggleModal}>
+  //       <Text style={styles.sectionTitle}>{sensorName} Data:</Text>
+  //       {data && Object.entries(data).map(([key, value]) => (
+  //         <Text key={key} style={styles.dataText}>
+  //           {`${key}: ${typeof value === 'number' ? value.toFixed(3) : value}`}
+  //         </Text>
+  //       ))}
+  //     </TouchableOpacity>
+  //   );
+  // };
+
+  const renderLocationData = (style) => {
     return (
-      <TouchableOpacity style={styles.section} onPress={onToggleModal}>
+      
+      <TouchableOpacity style={[styles.section, style]} onPress={toggleLocationModal}>
+        <Text style={styles.sectionTitle}>Location Data:</Text>
+        {location && Object.entries(location.coords).map(([key, value]) => (
+          <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
+        ))}
+      </TouchableOpacity>
+    );
+  };
+
+  // const renderMagnetometerData = () => {
+  //   return (
+  //     <View style={styles.section}>
+  //       <Text style={styles.sectionTitle}>Magnetometer Data:</Text>
+  //       {magnetometerData && Object.entries(magnetometerData).map(([key, value]) => (
+  //         <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
+  //       ))}
+  //     </View>
+  //   );
+  // };
+
+  const renderSensorData = (data, sensorName, style) => {
+    return (
+      <TouchableOpacity style={[styles.section, style]} onPress={() => sendData({ [sensorName]: data })}>
         <Text style={styles.sectionTitle}>{sensorName} Data:</Text>
         {data && Object.entries(data).map(([key, value]) => (
           <Text key={key} style={styles.dataText}>
@@ -183,38 +219,15 @@ export default function App() {
     );
   };
 
-  const renderLocationData = () => {
-    return (
-      <TouchableOpacity style={styles.section} onPress={toggleLocationModal}>
-        <Text style={styles.sectionTitle}>Location Data:</Text>
-        {location && Object.entries(location.coords).map(([key, value]) => (
-          <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
-        ))}
-      </TouchableOpacity>
-    );
-  };
-
-  const renderMagnetometerData = () => {
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Magnetometer Data:</Text>
-        {magnetometerData && Object.entries(magnetometerData).map(([key, value]) => (
-          <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
-        ))}
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView>
-        {renderLocationData()}
-        {/* {renderSensorData(location, 'Location', toggleLocationModal)} */}
-        {renderSensorData(gyroData, 'Gyroscope', toggleGyroModal)}
-        {renderSensorData(accelData, 'Accelerometer', toggleAccelModal)}
-        {/* {renderSensorData(magnetometerData, 'Magnetometer', toggleMagnetModal)} */}
-        {renderMagnetometerData()}
-        {renderSensorData(barometerData, 'Barometer', toggleBarometerModal)}
+        {renderLocationData(styles.locationColor)}
+        {/* {renderSensorData(location, 'Location', styles.locationColor)} */}
+        {renderSensorData(gyroData, 'Gyroscope', styles.gyroColor)}
+        {renderSensorData(accelData, 'Accelerometer', styles.accelColor)}
+        {renderSensorData(magnetometerData, 'Magnetometer', styles.magnetColor)}
+        {renderSensorData(barometerData, 'Barometer', styles.barometerColor)}
 
         {/* ...渲染其他传感器数据 */}
       </ScrollView>
@@ -274,12 +287,26 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   dataText: {
     fontSize: 16,
     marginVertical: 2,
   },
-
+  locationColor: {
+    backgroundColor: 'rgba(0, 128, 0, 0.3)', // 清淡的绿色
+  },
+  gyroColor: {
+    backgroundColor: 'rgba(255, 0, 0, 0.3)', // 清淡的红色
+  },
+  accelColor: {
+    backgroundColor: 'rgba(0, 0, 255, 0.3)', // 清淡的蓝色
+  },
+  magnetColor: {
+    backgroundColor: 'rgba(128, 0, 128, 0.3)', // 清淡的紫色
+  },
+  barometerColor: {
+    backgroundColor: 'rgba(255, 165, 0, 0.3)', // 清淡的橙色
+  },
 });
