@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, Button, TextInput, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Button, TextInput, TouchableOpacity } from 'react-native';
 import Modal from 'react-native-modal';
 import axios from 'axios';
 import * as Location from 'expo-location';
@@ -12,11 +12,18 @@ export default function App() {
   const [magnetometerData, setMagnetometerData] = useState({});
   const [barometerData, setBarometerData] = useState({});
   const [serverUrl, setServerUrl] = useState('http://yourserver.com:port');
+
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isLocationModalVisible, setLocationModalVisible] = useState(false);
+  const [isGyroModalVisible, setGyroModalVisible] = useState(false);
+  const [isAccelModalVisible, setAccelModalVisible] = useState(false);
+  const [isMagnetModalVisible, setMagnetModalVisible] = useState(false);
+  const [isBarometerModalVisible, setBarometerModalVisible] = useState(false);
+
 
   useEffect(() => {
     let locationSubscription;
-  
+
     const subscribeToSensors = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
@@ -26,44 +33,43 @@ export default function App() {
           distanceInterval: 1, // 或者每移动1米更新一次
         }, setLocation);
       }
-  
+
       Gyroscope.setUpdateInterval(1000);
       const gyroSubscription = Gyroscope.addListener(data => setGyroData(data));
-  
+
       Accelerometer.setUpdateInterval(1000);
       const accelSubscription = Accelerometer.addListener(data => setAccelData(data));
-  
+
       Magnetometer.setUpdateInterval(1000);
       const magnetometerSubscription = Magnetometer.addListener(data => setMagnetometerData(data));
-  
+
       Barometer.setUpdateInterval(1000);
       const barometerSubscription = Barometer.addListener(data => setBarometerData(data));
-  
+
       return () => {
         gyroSubscription.remove();
         accelSubscription.remove();
         magnetometerSubscription.remove();
         barometerSubscription.remove();
         if (locationSubscription) {
-          locationSubscription.remove(); // 确保取消位置订阅
+          locationSubscription.remove();
         }
       };
     };
-  
+
     subscribeToSensors();
-  
+
     const dataSendInterval = setInterval(() => {
       sendData();
     }, 2000);
-  
+
     return () => {
       clearInterval(dataSendInterval);
       if (locationSubscription) {
-        locationSubscription.remove(); // 清理位置订阅
+        locationSubscription.remove();
       }
     };
-  }, [serverUrl]); // 依赖项列表中添加serverUrl
-  
+  }, [serverUrl]);
 
   const sendData = async () => {
     const payload = {
@@ -86,46 +92,77 @@ export default function App() {
     setModalVisible(!isModalVisible);
   };
 
+  const toggleLocationModal = () => {
+    setLocationModalVisible(!isLocationModalVisible);
+  };
+
+  const toggleGyroModal = () => {
+    setGyroModalVisible(!isGyroModalVisible);
+  };
+
+  const toggleAccelModal = () => {
+    setAccelModalVisible(!isAccelModalVisible);
+  };
+
+  const toggleMagnetModal = () => {
+    setMagnetModalVisible(!isMagnetModalVisible);
+  };
+
+  const toggleBarometerModal = () => {
+    setBarometerModalVisible(!isBarometerModalVisible);
+  };
+
   const handleServerUrlChange = (text) => {
     setServerUrl(text);
   };
 
-  const renderSensorData = (data, sensorName) => {
+  const renderSensorData = (data, sensorName, onToggleModal) => {
     return (
-      <View style={styles.section}>
+      <TouchableOpacity style={styles.section} onPress={onToggleModal}>
         <Text style={styles.sectionTitle}>{sensorName} Data:</Text>
         {data && Object.entries(data).map(([key, value]) => (
-          <Text key={key} style={styles.dataText}>{`${key}: ${value.toFixed(3)}`}</Text>
+          <Text key={key} style={styles.dataText}>
+            {`${key}: ${typeof value === 'number' ? value.toFixed(3) : value}`}
+          </Text>
         ))}
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const renderLocationData = () => {
-    if (location) {
-      return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Location Data:</Text>
-          <Text style={styles.dataText}>Latitude: {location.coords.latitude}</Text>
-          <Text style={styles.dataText}>Longitude: {location.coords.longitude}</Text>
-          <Text style={styles.dataText}>Altitude: {location.coords.altitude} meters</Text>
-          <Text style={styles.dataText}>Speed: {location.coords.speed} m/s</Text>
-          <Text style={styles.dataText}>Heading: {location.coords.heading} degrees</Text>
-          <Text style={styles.dataText}>Accuracy: {location.coords.accuracy} meters</Text>
-        </View>
-      );
-    }
-    return <Text style={styles.infoText}>Waiting for location data...</Text>;
+    return (
+      <TouchableOpacity style={styles.section} onPress={toggleLocationModal}>
+        <Text style={styles.sectionTitle}>Location Data:</Text>
+        {location && Object.entries(location.coords).map(([key, value]) => (
+          <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
+        ))}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderMagnetometerData = () => {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Magnetometer Data:</Text>
+        {magnetometerData && Object.entries(magnetometerData).map(([key, value]) => (
+          <Text key={key} style={styles.dataText}>{`${key}: ${value}`}</Text>
+        ))}
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
       <ScrollView>
         {renderLocationData()}
-        {renderSensorData(gyroData, 'Gyroscope')}
-        {renderSensorData(accelData, 'Accelerometer')}
-        {renderSensorData(magnetometerData, 'Magnetometer')}
-        {renderSensorData(barometerData, 'Barometer')}
+        {/* {renderSensorData(location, 'Location', toggleLocationModal)} */}
+        {renderSensorData(gyroData, 'Gyroscope', toggleGyroModal)}
+        {renderSensorData(accelData, 'Accelerometer', toggleAccelModal)}
+        {/* {renderSensorData(magnetometerData, 'Magnetometer', toggleMagnetModal)} */}
+        {renderMagnetometerData()}
+        {renderSensorData(barometerData, 'Barometer', toggleBarometerModal)}
+
+        {/* ...渲染其他传感器数据 */}
       </ScrollView>
       <Button title="Set Server Address" onPress={toggleModal} />
       <Modal isVisible={isModalVisible}>
@@ -139,6 +176,18 @@ export default function App() {
           <Button title="Save" onPress={toggleModal} />
         </View>
       </Modal>
+      <Modal isVisible={isLocationModalVisible}>
+        <View style={styles.modalContent}>
+          <Text>A</Text>
+          <Button title="Close" onPress={toggleLocationModal} />
+        </View>
+      </Modal>
+      <Modal isVisible={isGyroModalVisible}>
+        <View style={styles.modalContent}>
+          <Text>A</Text>
+          <Button title="Close" onPress={toggleGyroModal} />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -148,6 +197,14 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 50,
   },
+  // modalContent: {
+  //   backgroundColor: 'white',
+  //   padding: 22,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   borderRadius: 4,
+  //   borderColor: 'rgba(0, 0, 0, 0.1)',
+  // },
   modalContent: {
     backgroundColor: 'white',
     padding: 22,
@@ -155,6 +212,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 4,
     borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  dataText: {
+    fontSize: 16,
+    marginVertical: 2,
   },
   input: {
     height: 40,
